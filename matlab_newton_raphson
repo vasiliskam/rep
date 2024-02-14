@@ -1,0 +1,146 @@
+clear all
+clc
+
+x = xlsread('eisnew.xlsx', 'C47:AH84');         %2023                           %Χρησιμοποιώ τις 'ηδη κανονικοποιημένες τιμές από το report του EIS για να έχω ίδιες τιμές στον τελικό δείκτη
+%x = xlsread('eisnew.xlsx', 'C93:AH130');        %2022
+%x = xlsread('eisnew.xlsx', 'C135:AH172');       %2021
+%x = xlsread('eisnew.xlsx', 'C177:AH214');       %2020
+%x = xlsread('eisnew.xlsx', 'C219:AH256');       %2019 
+%x = xlsread('eisnew.xlsx', 'C261:AH298');       %2018
+%x = xlsread('eisnew.xlsx', 'C303:AH340');       %2017
+
+
+i = 1;
+j = 1;
+m = length(x);
+n = width(x);
+
+k = 0;
+k_array = [];
+y = x.^k;
+yder = y.*log(x);
+
+for pillar=1:n
+    k = 0;
+    a = 1;
+
+ %Βρίσκω τα k των χωρών με τη μέθοδο Newton-Raphson με αρχική πρόβλεψη το k=0   
+ while abs(a) > 0.0000000001
+    
+     y = x.^k;                                                     
+     yder = (x.^k).*log(x);
+
+     len = 0;
+     prosorino_array_x = [];
+     prosorino_array_y = [];
+     prosorino_array_yder = [];
+
+     for i=1:m
+         if x(i, pillar) > 0
+             prosorino_array_x(i) = x(i, pillar);
+             prosorino_array_y(i) = prosorino_array_x(i)^k;
+             prosorino_array_yder(i) = prosorino_array_y(i)*log(prosorino_array_x(i));
+             len = len + 1;
+         end
+     end
+        
+     
+     a = sum(prosorino_array_x)-len*mean(prosorino_array_y);                         % Συνάρτηση f(k) = Σx^k-n*y = 0
+     dera = sum(prosorino_array_x.^k) - len*mean(prosorino_array_yder);              % Παράγωγος f'(k)
+ 
+     k = k -(a/dera);
+    
+ end
+ k_array(pillar) = k;                                                               %Αποθηκεύω τα k των χωρών σε ένα διάνυσμα
+end
+
+yfinal = [];
+
+for i=1:m
+    for j=1:n
+        yfinal(i, j) = x(i,j)^k_array(j);                                        %Βρίσκω τις τιμές του y με τα k που βρήκα
+    end
+end
+
+h = [];
+
+for i=1:m
+    for j=1:n
+        h(i,j) = (min(yfinal(i, :)))+(1-exp(-yfinal(i, j)+min(yfinal(i, :))));     %Εφαρμόζω το PFB (τύπος (1) στο άρθρο)
+    end
+end
+
+h1 = [];
+
+for i=1:m
+    for j=1:n
+        h1(i, j) = x(i, j);
+
+         if h1(i, j) == min(x(i, :))
+             h1(i, j) = h1(i, j) + 0.1;                                     %Βρίσκω το bottleneck για κάθε χώρα και εφαρμόζω αύξηση κατά 0,1 σε αυτό
+         end
+    end
+end
+
+eis1 = [];
+eis2 = [];
+eis3 = [];
+eis4 = []; 
+eis5 = [];
+
+for i=1:m
+    eis1(i) = nanmean(x(i, :));                                 %Βρίσκω την αρχική τιμή του δείκτη για κάθε χώρα
+end
+
+for i=1:m
+    eis2(i) = nanmean(h(i, :));                                 %Βρίσκω την τιμή του δείκτη για κάθε χώρα μετά την εύρεση του PFB
+end
+
+for i=1:m
+    eis3(i) = nanmean(h1(i, :));                                %Βρίσκω την τιμή του δείκτη για κάθε χώρα μετά την αύξηση του bottleneck κατά 0,1
+end
+
+ph1 = [];
+preph1 = [];
+
+for i=1:m
+    for j=1:n
+        preph1(i, j) = h1(i,j)^k_array(j);                                        %Βρίσκω τις τιμές του y με τα k που βρήκα
+    end
+end
+for i=1:m
+    for j=1:n
+        ph1(i,j) = (min(preph1(i, :)))+(1-exp(-preph1(i, j)+min(preph1(i, :))));     %Εφαρμόζω το PFB (τύπος (1) στο άρθρο)
+    end
+end
+
+for i=1:m
+    eis4(i) = nanmean(ph1(i, :));                                %Βρίσκω την τιμή του δείκτη για κάθε χώρα μετά την αύξηση του bottleneck κατά 0,1
+end
+metavoli = [];
+
+for i=1:m
+    metavoli(i) = (eis4(i)-eis2(i))/eis2(i);                    %Διάνυσμα με τις μεταβολές του δείκτη κάθε χώρας μετά την αύξηση του bottleneck κατά 0,1
+end
+
+mesi_metavoli = mean(metavoli)*100                              %Ποσοστιαία μεταβολή του δείκτη (αποτέλεσμα 1,23% αύξηση)
+
+h1(1, :) =[0.593, 0.704, 0.369, 0.656, 0.739, 0.574, 0.840, 0.506, 0.684, 0.766, 1.000, 1.000, 0.477, 1.000, 0.856, 0.690, 0.751, 1.000, 0.917, 0.567, 0.469, 0.637, 0.460, 0.369, 0.653, 0.943, 0.651, 0.756, 0.683, 0.677, 0.781, 0.371];
+
+ph1 = [];
+preph1 = [];
+
+for i=1:m
+    for j=1:n
+        preph1(i, j) = h1(i,j)^k_array(j);                                        %Βρίσκω τις τιμές του y με τα k που βρήκα
+    end
+end
+for i=1:m
+    for j=1:n
+        ph1(i,j) = (min(preph1(i, :)))+(1-exp(-preph1(i, j)+min(preph1(i, :))));     %Εφαρμόζω το PFB (τύπος (1) στο άρθρο)
+    end
+end
+
+for i=1:m
+    eis5(i) = nanmean(ph1(i, :));                                %Βρίσκω την τιμή του δείκτη για κάθε χώρα μετά την αύξηση του bottleneck κατά 0,1
+end
