@@ -1,0 +1,144 @@
+import  numpy as np
+from numpy import random
+import matplotlib.pyplot as plt
+
+#Τυχαίες τιμές για τη θερμοκρασία και την υγρασία
+t = random.randint(40)                                        
+print('Atmospheric temperature is', t, 'degrees Celsius.')    
+
+h = random.randint(100)                                       
+print('Relative humidity is', h, '%')                        
+
+#Διαγράμματα για τις μεταβλητές εισόδου 
+x1 = np.array([0, 10, 15, 20, 25, 30, 40])                    
+y11 = np.array([1, 0.33, 0, 0, 0, 0, 0])                     
+y12 = np.array([0, 0, 0.5, 1, 0.5, 0, 0])                     
+y13 = np.array([0, 0, 0, 0, 0, 0.33, 1])
+
+plt.figure(1)                                                    
+plt.subplot(2, 1, 1)
+plt.plot(x1, y11)
+plt.plot(x1, y12, color = '#4CAF50')
+plt.plot(x1, y13, color = 'r')
+plt.title('Temperature')
+plt.legend(['Cold', 'Medium', 'Hot'])
+plt.grid()
+
+x2 = np.array([0, 60 , 65, 75, 80, 100])                     
+y21 = np.array([1, 0, 0, 0, 0, 0])                           
+y22 = np.array([0, 1, 1, 1, 0.8, 0])                         
+y23 = np.array([0, 0, 0, 0, 0.2, 1])
+
+plt.subplot(2, 1, 2)                                         
+plt.plot(x2, y21)
+plt.plot(x2, y22)
+plt.plot(x2, y23)
+plt.title('Humidity')
+plt.legend(['Dry', 'Normal', 'Wet'])
+plt.grid()
+
+#Κατασκευή των διανυσμάτων με τις τιμές συμμετοχής της θερμοκρασίας
+ycold1 = np.linspace(1, 0, 15)
+ycold2 = np.zeros(25)
+ycold = np.concatenate((ycold1, ycold2))
+ymedium1 = np.zeros(10)
+ymedium2 = np.linspace(0, 1, 10)
+ymedium3 = np.linspace(1, 0, 10)
+ymedium4 = np.zeros(10)
+ymedium = np.concatenate((ymedium1, ymedium2, ymedium3, ymedium4))
+yhot1 = np.zeros(25)
+yhot2 = np.linspace(0, 1, 15)
+yhot = np.concatenate((yhot1, yhot2))
+temperature = np.empty(shape=3, dtype=float)
+
+temperature[0] = ycold[t-1]
+t1 = temperature[0]
+temperature[1] = ymedium[t-1]
+t2 = temperature[1]
+temperature[2] = yhot[t-1]
+t3 = temperature[2]
+
+print('The array of participation (μ) for this temperature is', temperature)
+
+#Κατασκευή των διανυσμάτων με τις τιμές συμμετοχής της υγρασίας
+ydry1 = np.linspace(1, 0, 60)
+ydry2 = np.zeros(40)
+ydry = np.concatenate((ydry1, ydry2))
+ynormal1 = np.linspace(0, 1, 60)
+ynormal2 = np.ones(15)
+ynormal3 = np.linspace(1, 0, 25)
+ynormal = np.concatenate((ynormal1, ynormal2, ynormal3))
+ywet1 = np.zeros(75)
+ywet2 = np.linspace(0, 1, 25)
+ywet = np.concatenate((ywet1, ywet2))
+humid = np.empty(shape=3, dtype=float)
+
+humid[0] = ydry[h-1]
+h1 = humid[0]
+humid[1] = ynormal[h-1]
+h2 = humid[1]
+humid[2] = ywet[h-1]
+h3 = humid[2]
+
+print('The array of participation (μ) for this humidity is', humid)
+
+#Κατασκευή των διανυσμάτων με τις τιμές εξόδου
+xout = np.linspace(1, 11, 11)
+
+yout11 = np.ones(1)
+yout12 = np.linspace(1, 0, 3)
+yout13 = np.linspace(0.5, 1, 2)
+yout14 = np.linspace(0.5, 0, 2)
+yout15 = np.linspace(0.5, 1, 2)
+yout16 = np.ones(1)
+yout1 = np.concatenate((yout11, yout12, yout13, yout14, yout15, yout16))
+
+yout0 = np.array([0])
+yout21 = np.linspace(0, 1, 3)
+yout22 = np.linspace(0.5, 0, 2)
+yout23 = np.linspace(0.5, 1, 2)
+yout24 = np.linspace(0.5, 0, 2)
+yout2 = np.concatenate((yout0, yout21, yout22, yout23, yout24, yout0))
+
+#Κατασκευή του διαγράμματος για τη μεταβλητή εξόδου
+plt.figure(2)
+plt.plot(xout, yout1, color = 'black')
+plt.plot(xout, yout2, color = 'black')
+plt.title('Output')
+plt.grid()
+plt.show()
+
+#Τιμές για τα peak των υποσυνόλων της μεταβλητής εξόδου
+S = 2
+MS = 4
+M = 6
+ML = 8
+L = 10
+
+#Κανόνες του Mamdani
+c_d = min(t1, h1) 
+c_n = min(t1, h2)
+c_w = min(t1, h3)
+m_d = min(t2, h1)
+m_n = min(t2, h2)
+m_w = min(t2, h3)
+h_d = min(t3, h1)
+h_n = min(t3, h2)
+h_w = min(t3, h3)
+
+#Κατασκευή του πίνακα με τα υποσύνολα της μεταβλητής εξόδου
+triaepitria = np.array([[c_d, c_n, c_w],
+[m_d, m_n, m_w],
+[h_d, h_n, h_w]])
+print(triaepitria)
+
+#Εφαρμογή της κεντροϊδους μεθόδου
+a = np.array([c_d, c_n, c_w, m_d, m_n, m_w, h_d, h_n, h_w])
+b = np.array([M, MS, S, ML, M, S, L, ML, M])
+paronomastis = np.sum(a)
+
+c = a*b
+arithmitis = np.sum(c)
+
+y_star = arithmitis/paronomastis
+print('The suggested ammount of water for irrigation is', y_star, 'cubic metres')
